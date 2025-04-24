@@ -26,6 +26,11 @@ The recursive nature of this system creates potential challenges:
 
 While the system offers powerful flexibility by giving control to the `Master Agent`, careful monitoring is recommended for resource-intensive applications.
 
+## Demo
+https://github.com/user-attachments/assets/ec99d37f-c6c9-4fbd-a07e-1997d88aaa99
+
+
+
 # Citations and Resources
 1. Emergence AI's 2025 Orchestrator
 Automatically creates agents and assembles multi-agent systems with minimal human intervention... continuously refining tools through recursive self-improvement
