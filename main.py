@@ -68,7 +68,6 @@ async def main():
         else:
             master_config: MasterAgentConfig = master_result.content
         
-        
         print(f"Spawning {len(master_config.agents)} child agents in parallel...")
         tasks = [
             run_child_agent(agent_config, i) 

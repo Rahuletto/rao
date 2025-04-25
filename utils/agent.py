@@ -9,25 +9,42 @@ from agno.tools.pubmed import PubmedTools
 from agno.tools.website import WebsiteTools
 from agno.tools.calculator import CalculatorTools
 from agno.tools.duckduckgo import DuckDuckGoTools
+from agno.tools.crawl4ai import Crawl4aiTools
+from agno.tools.pandas import PandasTools
+from agno.tools.youtube import YouTubeTools
 
+tools=[ 
+    PandasTools(),
+    Crawl4aiTools(max_length=None),
+    ReasoningTools(add_instructions=True),
+    YFinanceTools(
+        stock_price=True,
+        analyst_recommendations=True,
+        company_info=True,
+        company_news=True,
+    ),
+    PubmedTools(),
+    CalculatorTools(
+        add=True,
+        subtract=True,
+        multiply=True,
+        divide=True,
+        exponentiate=True,
+        factorial=True,
+        is_prime=True,
+        square_root=True,
+    ),
+    WikipediaTools(),
+    ArxivTools(),
+    WebsiteTools(),
+    DuckDuckGoTools(),
+    YouTubeTools()
+]
 
 def CreateMaster(model, system, outputModel):
     agent = Agent(
-        model=Gemini(id=model),
-        tools=[ 
-            ReasoningTools(add_instructions=True),
-            CalculatorTools(
-            add=True,
-            subtract=True,
-            multiply=True,
-            divide=True,
-            exponentiate=True,
-            factorial=True,
-            is_prime=True,
-            square_root=True,
-        ),
-            WebsiteTools()
-            ],
+        model=Gemini(id=model, show_tool_calls=True),
+        tools=tools,
         system_message=system,
         show_tool_calls=True,
         instructions=[
@@ -44,30 +61,7 @@ def CreateMaster(model, system, outputModel):
 def CreateChild(model, system):
     agent = Agent(
         model=Gemini(id=model, show_tool_calls=True),
-        tools=[ 
-            ReasoningTools(add_instructions=True),
-            YFinanceTools(
-                stock_price=True,
-                analyst_recommendations=True,
-                company_info=True,
-                company_news=True,
-            ),
-            PubmedTools(),
-            CalculatorTools(
-            add=True,
-            subtract=True,
-            multiply=True,
-            divide=True,
-            exponentiate=True,
-            factorial=True,
-            is_prime=True,
-            square_root=True,
-        ),
-            # WikipediaTools(),
-            ArxivTools(),
-            WebsiteTools(),
-            DuckDuckGoTools()
-            ],
+        tools=tools,
         system_message=system,
         show_tool_calls=True,
         instructions=[
@@ -84,30 +78,7 @@ def CreateChild(model, system):
 def FinalVerdict(model, system):
     agent = Agent(
         model=Gemini(id=model),
-        tools=[ 
-            ReasoningTools(add_instructions=True),
-            YFinanceTools(
-                stock_price=True,
-                analyst_recommendations=True,
-                company_info=True,
-                company_news=True,
-            ),
-            PubmedTools(),
-            CalculatorTools(
-            add=True,
-            subtract=True,
-            multiply=True,
-            divide=True,
-            exponentiate=True,
-            factorial=True,
-            is_prime=True,
-            square_root=True,
-        ),
-            WikipediaTools(),
-            ArxivTools(),
-            WebsiteTools(),
-            DuckDuckGoTools(),
-            ],
+        tools=tools,
         system_message=system,
         show_tool_calls=True,
         instructions=[
