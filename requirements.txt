@@ -1,0 +1,6 @@
+agno
+arxiv
+yfinance
+pypdf
+wikipedia
+duckduckgo-search
