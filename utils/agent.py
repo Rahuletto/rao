@@ -8,6 +8,7 @@ from agno.tools.wikipedia import WikipediaTools
 from agno.tools.pubmed import PubmedTools
 from agno.tools.website import WebsiteTools
 from agno.tools.calculator import CalculatorTools
+from agno.tools.duckduckgo import DuckDuckGoTools
 
 
 def CreateMaster(model, system, outputModel):
@@ -42,7 +43,7 @@ def CreateMaster(model, system, outputModel):
 
 def CreateChild(model, system):
     agent = Agent(
-        model=Gemini(id=model, show_tool_calls=True, grounding=True),
+        model=Gemini(id=model, show_tool_calls=True),
         tools=[ 
             ReasoningTools(add_instructions=True),
             YFinanceTools(
@@ -64,7 +65,8 @@ def CreateChild(model, system):
         ),
             # WikipediaTools(),
             ArxivTools(),
-            WebsiteTools()
+            WebsiteTools(),
+            DuckDuckGoTools()
             ],
         system_message=system,
         show_tool_calls=True,
@@ -103,7 +105,8 @@ def FinalVerdict(model, system):
         ),
             WikipediaTools(),
             ArxivTools(),
-            WebsiteTools()
+            WebsiteTools(),
+            DuckDuckGoTools(),
             ],
         system_message=system,
         show_tool_calls=True,
