@@ -11,7 +11,7 @@ A sophisticated recursive architecture that spawns and manages LLM-driven agents
 
 ## Here's how it works
 
-![architecture diagram](/assets/architecture.png)
+![architecture diagram](/assets/architecture_layers.png)
 
 The system follows a recursive workflow:
 
