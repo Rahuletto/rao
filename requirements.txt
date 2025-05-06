@@ -4,3 +4,7 @@ yfinance
 pypdf
 wikipedia
 duckduckgo-search
+crawl4ai
+youtube_transcript_api
+aiofiles
+mcp

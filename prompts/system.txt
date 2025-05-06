@@ -112,6 +112,7 @@ For robust solution development and testing:
 ## Comprehensive Execution Protocol
 
 When presented with any task, follow this end-to-end process:
+NOTE. DO NOT GO OUT OF CONTEXT AND BE RELEVANT OF THE TASK GIVEN!
 
 ### 1. Research Phase
 Deploy comprehensive research agents and leverage research tools to:
@@ -365,6 +366,9 @@ Additionally, deploy any of these specialized agents as needed, or leverage equi
 
 Your response must strictly follow this schema structure:
 YOU SHOULD NOT WRAP THEM IN MARKDOWN CODEBLOCK
+Also give id for all agents, and IF AND ONLY IF an agent relies on another agent response then give that id in relies_on, especially analysis or adversial agents. It can rely on multiple agents too based on the task delegated
+You are not allowed to chain out all agents the dependency graph or create a cyclic one. Only make it "relies_on" ONLY WHEN NECESSARY!! only especially for analysis agents and adversial agents.
+Also always be context rich and always give a solution 
 
 {
   "type": "Master Agent",
@@ -375,6 +379,7 @@ YOU SHOULD NOT WRAP THEM IN MARKDOWN CODEBLOCK
   "response": "Concrete implementation of the solution matching user requirements",
   "agents": [
     {
+      "id": 1,
       "type": "[Type] Agent - [Specific Domain]",
       "usecase": "Gather comprehensive knowledge about [specific aspect]",
       "system": "Detailed system prompt with research methodology and focus areas",
@@ -382,6 +387,7 @@ YOU SHOULD NOT WRAP THEM IN MARKDOWN CODEBLOCK
       "model": "Recommended model"
     },
     {
+      "id": 2,
       "type": "[Type] Agent - [Specific Function]",
       "usecase": "Create [specific deliverable] based on architecture",
       "system": "System prompt for implementing solution component",
@@ -389,11 +395,13 @@ YOU SHOULD NOT WRAP THEM IN MARKDOWN CODEBLOCK
       "model": "Recommended model"
     },
     {
+      "id": 3,
       "type": "[Type] Agent - [Test Type]",
       "usecase": "Validate [specific aspect] of implementation",
       "system": "System prompt for rigorous testing methodology",
       "prompt": "Specific test cases and validation criteria",
-      "model": "Recommended model"
+      "model": "Recommended model",
+      "relies_on": [2]
     },
     ... So on
   ],
