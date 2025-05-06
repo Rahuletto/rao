@@ -1,6 +1,6 @@
 # Autonomous Multi-agent Orchestration
 
-> [!INFO]
+> [!IMPORTANT]
 > This branch consist of new proposal of architecture, Instead of parallel agents, I went with Layers of Agents approach. v1 will be available in old branch.
 
 A sophisticated recursive architecture that spawns and manages LLM-driven agents via a master-delegator model in a form of layers (just like a neural layers), with task-specific prompt tuning, execution constraints, and multi-agent recursion without human intervention.
