@@ -1,5 +1,12 @@
 from pydantic import BaseModel, Field
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Dict, Any
+
+
+class ToolRequirement(BaseModel):
+    tool_name: str = Field(..., description="Name of the required tool")
+    required_capabilities: List[str] = Field(..., description="List of required capabilities for this tool")
+    fallback_tools: Optional[List[str]] = Field(None, description="Alternative tools that can be used if primary tool fails")
+    critical: bool = Field(True, description="Whether this tool is critical for the agent's task")
 
 
 class AgentConfig(BaseModel):
@@ -23,6 +30,12 @@ class AgentConfig(BaseModel):
     )
     relies_on: Optional[List[int]] = Field(
         None, description="List of agent IDs that this agent relies on for its task."
+    )
+    required_tools: Optional[List[ToolRequirement]] = Field(
+        None, description="List of tools required by this agent and their capabilities"
+    )
+    fallback_strategy: Optional[str] = Field(
+        None, description="Strategy to use if required tools are not available or fail"
     )
 
 

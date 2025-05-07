@@ -50,17 +50,71 @@ async def run_child_agent(agent_config, index, parent_results=None):
             f"[{index}] Added context from {len(agent_config.relies_on)} parent agent(s)"
         )
 
+    # Add tool availability and fallback information to the prompt
+    if agent_config.required_tools:
+        tool_info = []
+        for tool_req in agent_config.required_tools:
+            tool_info.append(f"Required Tool: {tool_req.tool_name}")
+            tool_info.append(f"Required Capabilities: {', '.join(tool_req.required_capabilities)}")
+            if tool_req.fallback_tools:
+                tool_info.append(f"Fallback Tools: {', '.join(tool_req.fallback_tools)}")
+            tool_info.append(f"Critical: {tool_req.critical}")
+        
+        tool_context = "\n".join(tool_info)
+        final_prompt = f"{final_prompt}\n\nTool Requirements:\n{tool_context}"
+        
+        if agent_config.fallback_strategy:
+            final_prompt = f"{final_prompt}\n\nFallback Strategy: {agent_config.fallback_strategy}"
+
     child_agent = CreateChild(
         model=agent_config.model,
         system=agent_config.system,
     )
 
-    child_result = await child_agent.arun(final_prompt)
-
-    print(f"\n--- Result from Agent {index} ({agent_config.type}) ---")
-    pprint_run_response(child_result)
-
-    return {"config": agent_config, "result": child_result.content, "index": index}
+    try:
+        child_result = await child_agent.arun(final_prompt)
+        print(f"\n--- Result from Agent {index} ({agent_config.type}) ---")
+        pprint_run_response(child_result)
+        return {"config": agent_config, "result": child_result.content, "index": index, "status": "success"}
+    except Exception as e:
+        error_msg = f"Error in Agent {index} ({agent_config.type}): {str(e)}"
+        print(f"\n--- {error_msg} ---")
+        
+        # If the agent has a fallback strategy, try to execute it
+        if agent_config.fallback_strategy:
+            try:
+                fallback_prompt = f"""
+                Original task failed with error: {str(e)}
+                Please execute the following fallback strategy:
+                {agent_config.fallback_strategy}
+                """
+                fallback_result = await child_agent.arun(fallback_prompt)
+                print(f"\n--- Fallback Result from Agent {index} ({agent_config.type}) ---")
+                pprint_run_response(fallback_result)
+                return {
+                    "config": agent_config,
+                    "result": fallback_result.content,
+                    "index": index,
+                    "status": "fallback_success",
+                    "original_error": str(e)
+                }
+            except Exception as fallback_error:
+                return {
+                    "config": agent_config,
+                    "result": f"Both primary and fallback strategies failed. Original error: {str(e)}. Fallback error: {str(fallback_error)}",
+                    "index": index,
+                    "status": "failure",
+                    "original_error": str(e),
+                    "fallback_error": str(fallback_error)
+                }
+        
+        return {
+            "config": agent_config,
+            "result": error_msg,
+            "index": index,
+            "status": "failure",
+            "error": str(e)
+        }
 
 
 def query_input():
@@ -131,6 +185,8 @@ async def main():
 
         # Store results by agent index
         results = {}
+        failed_agents = set()
+        tool_limitations = []
 
         # Create a mapping from agent index to the agent object
         agent_map = {}
@@ -181,12 +237,65 @@ async def main():
             # Wait for all tasks to complete
             completed_results = await asyncio.gather(*tasks)
 
-            # Store results
+            # Store results and track failures
             for result in completed_results:
                 agent_idx = result["index"]
                 results[agent_idx] = result
                 remaining_agents.remove(agent_idx)
-                print(f"✓ Completed Agent {agent_idx} ({result['config'].type})")
+                
+                if result["status"] == "failure":
+                    failed_agents.add(agent_idx)
+                    agent = agent_map[agent_idx]
+                    if agent.required_tools:
+                        for tool_req in agent.required_tools:
+                            if tool_req.critical:
+                                tool_limitations.append({
+                                    "agent_id": agent_idx,
+                                    "agent_type": agent.type,
+                                    "tool": tool_req.tool_name,
+                                    "required_capabilities": tool_req.required_capabilities,
+                                    "error": result.get("error", "Unknown error")
+                                })
+                elif result["status"] == "fallback_success":
+                    print(f"✓ Completed Agent {agent_idx} ({result['config'].type}) with fallback strategy")
+                else:
+                    print(f"✓ Completed Agent {agent_idx} ({result['config'].type})")
+
+            # If we have tool limitations, inform the master agent and restart execution
+            if tool_limitations:
+                print("\nTool limitations detected. Informing master agent...")
+                limitations_prompt = f"""
+                The following tool limitations were encountered during execution:
+                {json.dumps(tool_limitations, indent=2)}
+                
+                Please provide an alternative strategy that works with the available tools.
+                """
+                
+                try:
+                    master_result = master_agent.run(limitations_prompt)
+                    print("\nMaster agent provided alternative strategy:")
+                    pprint_run_response(master_result)
+                    
+                    # Parse and validate the new strategy
+                    if isinstance(master_result.content, str) and "```json" in master_result.content:
+                        content = master_result.content
+                        json_start = content.find("```json") + 7
+                        json_end = content.rfind("```")
+                        json_str = content[json_start:json_end].strip()
+                        master_config = TypeAdapter(MasterAgentConfig).validate_json(json_str)
+                    else:
+                        master_config = master_result.content
+                    
+                    # Reset execution state
+                    results = {}
+                    failed_agents = set()
+                    tool_limitations = []
+                    remaining_agents = set(agent.id for agent in master_config.agents)
+                    agent_map = {agent.id: agent for agent in master_config.agents}
+                    break  # Break the current execution loop to start fresh with new strategy
+                except Exception as e:
+                    print(f"Error getting alternative strategy: {e}")
+                    traceback.print_exc()
 
         # Prepare results for final verdict
         print(f"All agents completed. Results available for: {list(results.keys())}")
@@ -204,14 +313,22 @@ async def main():
         for result in child_results:
             config = result["config"]
             content = result["result"]
+            status = result.get("status", "success")
 
             verdict_prompt += f"""
                 AGENT: {config.type}
                 FOCUS: {config.usecase}
+                STATUS: {status}
                 
                 OUTPUT:
                 {content}
                 """
+
+        if failed_agents:
+            verdict_prompt += f"""
+            NOTE: The following agents failed to complete their tasks: {failed_agents}
+            Their results may be incomplete or missing.
+            """
 
         verdict_prompt += """
         TASK: Analyze all agent responses provided above and produce a final, fully synthesized, actionable output that directly answers the original query with research evidences. Integrate all relevant information and perspectives from the agents equally—do not favor any single response. 
