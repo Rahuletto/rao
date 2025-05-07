@@ -42,3 +42,11 @@ class MasterAgentConfig(BaseModel):
         ...,
         description="List of all agent configurations involved in fulfilling the task.",
     )
+    estimated_step_count: Optional[int] = Field(
+        None,
+        description="A rough estimate of the number of primary child agents or logical steps involved.",
+    )
+    plan_confidence: Optional[Literal["High", "Medium", "Low"]] = Field(
+        None,
+        description="Master Agent's confidence in its ability to fully address the query with the generated plan and available tools.",
+    )

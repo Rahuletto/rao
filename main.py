@@ -114,6 +114,14 @@ async def main():
 
         print(f"\nMaster agent created {len(master_config.agents)} child agents")
 
+        # Display execution plan information
+        if master_config.estimated_step_count is not None:
+            print(f"\nEstimated number of steps: {master_config.estimated_step_count}")
+        if master_config.plan_confidence is not None:
+            print(f"Plan confidence level: {master_config.plan_confidence}")
+        print("\nExecution plan overview:")
+        print(master_config.response)
+
         # Debug: Print agent information
         print("Agent details:")
         for i, agent in enumerate(master_config.agents):
