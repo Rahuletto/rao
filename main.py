@@ -75,11 +75,19 @@ async def run_child_agent(agent_config, index, parent_results=None):
         child_result = await child_agent.arun(final_prompt)
         print(f"\n--- Result from Agent {index} ({agent_config.type}) ---")
         pprint_run_response(child_result)
-        return {"config": agent_config, "result": child_result.content, "index": index, "status": "success"}
+        # Check for soft failure patterns in the output
+        output_content = str(child_result.content).lower()
+        failure_patterns = [
+            "unable to", "not available", "try again later", "could not", "error", "failed", "unavailable", "not able to", "no data", "missing", "not found"
+        ]
+        if any(pattern in output_content for pattern in failure_patterns):
+            status = "failure"
+        else:
+            status = "success"
+        return {"config": agent_config, "result": child_result.content, "index": index, "status": status}
     except Exception as e:
         error_msg = f"Error in Agent {index} ({agent_config.type}): {str(e)}"
         print(f"\n--- {error_msg} ---")
-        
         # If the agent has a fallback strategy, try to execute it
         if agent_config.fallback_strategy:
             try:
@@ -91,11 +99,17 @@ async def run_child_agent(agent_config, index, parent_results=None):
                 fallback_result = await child_agent.arun(fallback_prompt)
                 print(f"\n--- Fallback Result from Agent {index} ({agent_config.type}) ---")
                 pprint_run_response(fallback_result)
+                # Check for soft failure in fallback as well
+                fallback_content = str(fallback_result.content).lower()
+                if any(pattern in fallback_content for pattern in failure_patterns):
+                    fallback_status = "failure"
+                else:
+                    fallback_status = "fallback_success"
                 return {
                     "config": agent_config,
                     "result": fallback_result.content,
                     "index": index,
-                    "status": "fallback_success",
+                    "status": fallback_status,
                     "original_error": str(e)
                 }
             except Exception as fallback_error:
@@ -107,7 +121,6 @@ async def run_child_agent(agent_config, index, parent_results=None):
                     "original_error": str(e),
                     "fallback_error": str(fallback_error)
                 }
-        
         return {
             "config": agent_config,
             "result": error_msg,
