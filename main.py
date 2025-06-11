@@ -78,7 +78,7 @@ async def main():
     if system == "":
         raise ValueError("System file is empty. Please provide a valid system file.")
 
-    master_agent = CreateMaster("gemini-2.0-flash", system, MasterAgentConfig)
+    master_agent = CreateMaster("claude-3-5-sonnet-20241022", system, MasterAgentConfig)
 
     try:
         print("Running master agent...")
@@ -213,7 +213,7 @@ async def main():
 
         print("\nCreating final verdict agent...")
         verdict_agent = FinalVerdict(
-            model="learnlm-2.0-flash-experimental",
+            model="claude-3-5-sonnet-20241022",
             system=verdict_system,
         )
 

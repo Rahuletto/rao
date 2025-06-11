@@ -1,5 +1,5 @@
 from agno.agent import Agent
-from agno.models.google import Gemini
+from agno.models.anthropic import Claude
 
 # Tools
 from agno.tools.yfinance import YFinanceTools
@@ -45,7 +45,7 @@ tools = [
 
 def CreateMaster(model, system, outputModel):
     agent = Agent(
-        model=Gemini(id=model, show_tool_calls=True),
+        model=Claude(id=model, show_tool_calls=True),
         tools=tools,
         system_message=system,
         show_tool_calls=True,
@@ -63,7 +63,7 @@ def CreateMaster(model, system, outputModel):
 
 def CreateChild(model, system):
     agent = Agent(
-        model=Gemini(id=model, show_tool_calls=True),
+        model=Claude(id=model, show_tool_calls=True),
         tools=tools,
         system_message=system,
         show_tool_calls=True,
@@ -80,7 +80,7 @@ def CreateChild(model, system):
 
 def FinalVerdict(model, system):
     agent = Agent(
-        model=Gemini(id=model),
+        model=Claude(id=model),
         tools=tools,
         system_message=system,
         show_tool_calls=True,
